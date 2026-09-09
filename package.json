@@ -1,0 +1,13 @@
+{
+  "name": "pulsebook",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @pulsebook/frontend dev",
+    "build": "pnpm --filter @pulsebook/frontend build",
+    "start": "pnpm --filter @pulsebook/frontend start",
+    "lint": "pnpm --filter @pulsebook/frontend lint",
+    "format": "pnpm --filter @pulsebook/frontend format"
+  },
+  "packageManager": "pnpm@11.1.1"
+}
