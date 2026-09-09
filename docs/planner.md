@@ -43,6 +43,6 @@ Incluí:
 ## Base de tareas
 Cada tarea está en la base de Notion con su estado (`pending` / `in_progress` / `done` / `blocked`),
 criterios de aceptación y repo asociado.
-🔗 **[Abrir base de tareas en Notion]()**
+🔗 **[Abrir base de tareas en Notion](https://app.notion.com/p/3d68f690ec12804cb3fff884d81cf4ae?v=3d68f690ec128040b1e0000c51491ca7)**
 > Si estás en Cursor con MCP de Notion configurado, podés consultar esta base
 > usando el MCP tool.
