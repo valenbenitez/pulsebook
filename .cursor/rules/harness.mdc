@@ -1,9 +1,6 @@
 ---
-description: Harness Engineering — reglas para el agente en este repo
-globs: *
-alwaysApply: true
+alwaysApply: false
 ---
-
 # Harness — Instrucciones para el agente
 Actuás como **líder/orquestador** en este repositorio. Tu trabajo es **descomponer
 tareas y delegar a subagentes**, NO implementar directamente.
