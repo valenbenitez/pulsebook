@@ -1,0 +1,214 @@
+// PulseBook MVP — source of truth for domain data.
+// Location: backend/prisma (Nest owns DB access; frontend talks to API only).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum ProfessionType {
+  BARBER
+  PSYCHOLOGIST
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  OTHER
+}
+
+// ─── Auth / tenant ────────────────────────────────────────────────────────────
+
+/// Professional account. Auth.js Credentials validates against this table;
+/// session lives in Next; Nest authorizes API calls with the shared session/token.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  business Business?
+}
+
+/// Tenant boundary. MVP: 1 User ↔ 1 Business. All domain rows scoped by businessId.
+model Business {
+  id             String         @id @default(cuid())
+  ownerId        String         @unique
+  name           String
+  slug           String         @unique
+  timezone       String // IANA, e.g. America/Argentina/Buenos_Aires
+  professionType ProfessionType
+  /// Gap between appointments when computing slots / overlap checks. Default 15.
+  bufferMin      Int            @default(15)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  owner        User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  services     Service[]
+  clients      Client[]
+  workingHours WorkingHours[]
+  exceptions   AvailabilityException[]
+  appointments Appointment[]
+  invoices     Invoice[]
+}
+
+// ─── Catalog ──────────────────────────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  durationMin Int
+  /// Amount in USD (fixed currency for MVP).
+  price       Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId, isActive])
+}
+
+// ─── CRM ──────────────────────────────────────────────────────────────────────
+
+model Client {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  email      String?
+  phone      String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  invoices     Invoice[]
+
+  @@index([businessId])
+  @@index([businessId, email])
+  @@index([businessId, phone])
+}
+
+// ─── Availability ─────────────────────────────────────────────────────────────
+
+/// Weekly recurring windows. Multiple rows per dayOfWeek allowed (e.g. split shift).
+model WorkingHours {
+  id         String @id @default(cuid())
+  businessId String
+  /// 0 = Sunday … 6 = Saturday (JS Date#getDay convention).
+  dayOfWeek  Int
+  /// Local time as HH:mm in the business timezone.
+  startTime  String
+  endTime    String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, dayOfWeek])
+}
+
+/// One-off closed days or special hours that override WorkingHours for a date.
+model AvailabilityException {
+  id         String   @id @default(cuid())
+  businessId String
+  date       DateTime @db.Date
+  isClosed   Boolean  @default(true)
+  /// When isClosed = false, optional special window (HH:mm, business timezone).
+  startTime  String?
+  endTime    String?
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, date])
+  @@index([businessId, date])
+}
+
+// ─── Appointments ─────────────────────────────────────────────────────────────
+
+model Appointment {
+  id         String            @id @default(cuid())
+  businessId String
+  clientId   String
+  serviceId  String
+  startsAt   DateTime
+  endsAt     DateTime
+  /// Public bookings start as PENDING and still block the slot.
+  status     AppointmentStatus @default(PENDING)
+  notes      String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  invoice  Invoice?
+
+  @@index([businessId, startsAt, endsAt])
+  @@index([businessId, status])
+  @@index([clientId])
+}
+
+// ─── Billing (operational, USD) ───────────────────────────────────────────────
+
+model Invoice {
+  id            String         @id @default(cuid())
+  businessId    String
+  clientId      String?
+  appointmentId String?        @unique
+  /// Sequential number per business (assigned on ISSUED).
+  number        Int?
+  status        InvoiceStatus  @default(DRAFT)
+  /// Total in USD.
+  total         Decimal        @db.Decimal(10, 2)
+  paidAt        DateTime?
+  paymentMethod PaymentMethod?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  appointment Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  items       InvoiceItem[]
+
+  @@unique([businessId, number])
+  @@index([businessId, status])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int     @default(1)
+  /// Unit price in USD.
+  unitPrice   Decimal @db.Decimal(10, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
