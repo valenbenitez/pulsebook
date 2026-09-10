@@ -5,7 +5,7 @@ import {
   isStartBeforeEnd,
   isValidHhMm,
   zonedDateTimeToUtc,
-} from './time.util';
+} from '../time.util';
 
 describe('time.util', () => {
   describe('isValidHhMm / isStartBeforeEnd', () => {
