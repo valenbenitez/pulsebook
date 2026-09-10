@@ -1,98 +1,252 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# PulseBook Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API NestJS del MVP PulseBook: agenda y facturación operativa para profesionales, multi-tenant.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Objetivo
 
-## Description
+Exponer la fuente de verdad del dominio (PostgreSQL vía Prisma) para:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Onboarding: registro User + Business y validación de credenciales (Auth.js en Next)
+- Catálogo de servicios, CRM de clientes, horarios y slots públicos
+- Citas (privadas + reserva pública) con overlap/`bufferMin`
+- Facturas operativas en USD (DRAFT → ISSUED → PAID / CANCELLED)
 
-## Project setup
+El frontend Next consume esta API; Nest no renderiza UI.
 
-```bash
-$ pnpm install
-```
+## Stack
 
-## Compile and run the project
 
-```bash
-# development
-$ pnpm run start
+| Tecnología                                  | Uso                                                      |
+| ------------------------------------------- | -------------------------------------------------------- |
+| **NestJS 11**                               | HTTP API, módulos, guards, ValidationPipe                |
+| **TypeScript**                              | Tipado estricto del servicio                             |
+| **Prisma 6** + **PostgreSQL**               | ORM y persistencia                                       |
+| **class-validator** / **class-transformer** | DTOs de request                                          |
+| **bcrypt**                                  | Hash de passwords                                        |
+| **jsonwebtoken**                            | JWT Bearer compartido con Auth.js (`AUTH_SECRET`, HS256) |
+| **Jest** + **Supertest**                    | Unit y e2e                                               |
+| **pnpm**                                    | Workspace monorepo                                       |
 
-# watch mode
-$ pnpm run start:dev
 
-# production mode
-$ pnpm run start:prod
-```
 
-## Run tests
+
+## Requisitos
+
+- Node.js compatible con el monorepo
+- PostgreSQL local (o remoto)
+- Variables en `backend/.env` (ver `.env.example` si existe):
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/pulsebook_database?schema=public"
+AUTH_SECRET="dev-auth-secret-change-me"
+PORT=3001   # opcional; default 3001
 ```
 
-## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Setup
+
+Desde la raíz del monorepo o desde `backend/`:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm install
+cd backend
+pnpm prisma:generate
+pnpm prisma:migrate
+pnpm start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Base URL: `http://localhost:3001/api`
 
-## Resources
+## Scripts
 
-Check out a few resources that may come in handy when working with NestJS:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Script                           | Descripción                |
+| -------------------------------- | -------------------------- |
+| `pnpm start:dev`                 | API en watch               |
+| `pnpm build` / `pnpm start:prod` | Build y producción         |
+| `pnpm test`                      | Unit tests                 |
+| `pnpm test:e2e`                  | E2E (requiere DB + `.env`) |
+| `pnpm prisma:migrate`            | Migraciones                |
+| `pnpm prisma:studio`             | UI Prisma                  |
 
-## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Autenticación
 
-## License
+Rutas marcadas **Auth** requieren:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```http
+Authorization: Bearer <JWT>
+```
+
+Contrato MVP (alineado a Auth.js Credentials):
+
+1. Next llama `POST /api/auth/validate` en `authorize()`
+2. Emite JWT HS256 con `AUTH_SECRET`, claims `sub` = user id y `email`
+3. Nest valida el Bearer en `SessionAuthGuard`
+
+Rutas **Público** no llevan token.
+
+Validación global: `whitelist`, `forbidNonWhitelisted`, `transform`.
+
+---
+
+
+
+## Endpoints
+
+Prefijo global: `/api`.
+
+### Health
+
+
+| Método | Path      | Auth | Descripción          |
+| ------ | --------- | ---- | -------------------- |
+| `GET`  | `/health` | —    | `{ "status": "ok" }` |
+
+
+
+
+### Auth
+
+
+| Método | Path             | Auth | Body / query                                                                                                  | Descripción                                                                    |
+| ------ | ---------------- | ---- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `POST` | `/auth/register` | —    | `email`, `password`, `name`, `businessName`, `slug`, `timezone`, `professionType` (`BARBER` | `PSYCHOLOGIST`) | Crea User + Business en transacción; password hasheado; `bufferMin` default 15 |
+| `POST` | `/auth/validate` | —    | `email`, `password`                                                                                           | Credenciales OK → `{ id, email, name }`; incorrectas → `401`                   |
+
+
+
+
+### Business
+
+
+| Método  | Path        | Auth | Body / query                                                        | Descripción                     |
+| ------- | ----------- | ---- | ------------------------------------------------------------------- | ------------------------------- |
+| `GET`   | `/business` | Auth | —                                                                   | Business del owner de la sesión |
+| `PATCH` | `/business` | Auth | `name?`, `slug?`, `timezone?`, `professionType?`, `bufferMin?` (≥0) | Actualiza perfil; slug único    |
+
+
+
+
+### Services
+
+
+| Método  | Path            | Auth | Body / query                                                        | Descripción                 |
+| ------- | --------------- | ---- | ------------------------------------------------------------------- | --------------------------- |
+| `POST`  | `/services`     | Auth | `name`, `durationMin`, `price` (USD), `description?`, `isActive?`   | Alta de servicio            |
+| `GET`   | `/services`     | Auth | `isActive?` (query)                                                 | Lista del business          |
+| `GET`   | `/services/:id` | Auth | —                                                                   | Detalle; `404` cross-tenant |
+| `PATCH` | `/services/:id` | Auth | parcial (`name`, `description`, `durationMin`, `price`, `isActive`) | Update / soft-deactivate    |
+
+
+
+
+### Clients
+
+
+| Método  | Path           | Auth | Body / query                         | Descripción                 |
+| ------- | -------------- | ---- | ------------------------------------ | --------------------------- |
+| `POST`  | `/clients`     | Auth | `name`, `email?`, `phone?`, `notes?` | Alta manual                 |
+| `GET`   | `/clients`     | Auth | `q?` (name/email/phone)              | Lista + búsqueda            |
+| `GET`   | `/clients/:id` | Auth | —                                    | Detalle; `404` cross-tenant |
+| `PATCH` | `/clients/:id` | Auth | parcial                              | Update                      |
+
+
+`ClientsService.findOrCreate` (interno) lo usa la reserva pública de citas.
+
+### Availability
+
+
+| Método   | Path                               | Auth    | Body / query                                            | Descripción                                                                            |
+| -------- | ---------------------------------- | ------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `GET`    | `/availability/public/:slug/slots` | Público | `serviceId`, `date` (`YYYY-MM-DD`)                      | Slots libres (timezone, duration, buffer, hours, excepciones, citas PENDING/CONFIRMED) |
+| `POST`   | `/availability/hours`              | Auth    | `dayOfWeek` (0–6), `startTime`, `endTime` (`HH:mm`)     | Alta horario semanal                                                                   |
+| `GET`    | `/availability/hours`              | Auth    | —                                                       | Lista                                                                                  |
+| `GET`    | `/availability/hours/:id`          | Auth    | —                                                       | Detalle                                                                                |
+| `PATCH`  | `/availability/hours/:id`          | Auth    | parcial                                                 | Update                                                                                 |
+| `DELETE` | `/availability/hours/:id`          | Auth    | —                                                       | Baja                                                                                   |
+| `POST`   | `/availability/exceptions`         | Auth    | `date`, `isClosed`, `startTime?`, `endTime?`, `reason?` | Excepción por fecha (unique business+date)                                             |
+| `GET`    | `/availability/exceptions`         | Auth    | —                                                       | Lista                                                                                  |
+| `GET`    | `/availability/exceptions/:id`     | Auth    | —                                                       | Detalle                                                                                |
+| `PATCH`  | `/availability/exceptions/:id`     | Auth    | parcial                                                 | Update                                                                                 |
+| `DELETE` | `/availability/exceptions/:id`     | Auth    | —                                                       | Baja                                                                                   |
+
+
+Si `isClosed=false`, `startTime`/`endTime` son requeridos. Día cerrado o sin ventana → slots `[]`.
+
+### Appointments
+
+
+| Método  | Path                         | Auth    | Body / query                                                  | Descripción                                                                    |
+| ------- | ---------------------------- | ------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `POST`  | `/appointments/public/:slug` | Público | `serviceId`, `startsAt`, `name`, `email?`, `phone?`, `notes?` | Reserva: findOrCreate client + cita `PENDING`; `409` si slot ocupado           |
+| `POST`  | `/appointments`              | Auth    | `clientId`, `serviceId`, `startsAt`, `notes?`, `status?`      | Alta; `endsAt = startsAt + durationMin`; valida overlap/buffer y working hours |
+| `GET`   | `/appointments`              | Auth    | `from?`, `to?`, `status?`                                     | Lista filtrada del business                                                    |
+| `GET`   | `/appointments/:id`          | Auth    | —                                                             | Detalle; `404` cross-tenant                                                    |
+| `PATCH` | `/appointments/:id`          | Auth    | `status?`, `notes?`, `startsAt?`                              | Update / reschedule (revalida); `CANCELLED` deja de bloquear                   |
+
+
+Estados: `PENDING`  `CONFIRMED`  `CANCELLED`  `COMPLETED`  `NO_SHOW`. Solo `PENDING`/`CONFIRMED` bloquean slot. Buffer alineado con availability (post-`endsAt`).
+
+### Invoices
+
+
+| Método  | Path                   | Auth | Body / query                                                                     | Descripción                                                           |
+| ------- | ---------------------- | ---- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `POST`  | `/invoices`            | Auth | `clientId?`, `appointmentId?`, `items[{ description, quantity>0, unitPrice≥0 }]` | Crea `DRAFT`; `total = Σ qty×unitPrice` USD; appointment 1:1 opcional |
+| `GET`   | `/invoices`            | Auth | `status?`                                                                        | Lista                                                                 |
+| `GET`   | `/invoices/:id`        | Auth | —                                                                                | Detalle con items; `404` cross-tenant                                 |
+| `PATCH` | `/invoices/:id`        | Auth | `clientId?`, `items?`                                                            | Solo en `DRAFT`                                                       |
+| `POST`  | `/invoices/:id/issue`  | Auth | —                                                                                | `DRAFT`→`ISSUED` + `number` secuencial por business                   |
+| `POST`  | `/invoices/:id/pay`    | Auth | `paymentMethod` (`CASH` | `TRANSFER` | `OTHER`)                                  | `ISSUED`→`PAID` + `paidAt`                                            |
+| `POST`  | `/invoices/:id/cancel` | Auth | —                                                                                | `DRAFT`|`ISSUED`→`CANCELLED`                                          |
+
+
+Sin campo currency (USD fijo). Fuera de scope: AFIP, pasarelas de pago.
+
+---
+
+
+
+## Errores habituales
+
+
+| Código | Cuándo                                                   |
+| ------ | -------------------------------------------------------- |
+| `400`  | Validación DTO / regla de negocio                        |
+| `401`  | Sin Bearer o JWT inválido                                |
+| `404`  | Recurso inexistente o de otro tenant                     |
+| `409`  | Conflicto (email/slug/slot/número/appointment duplicado) |
+
+
+
+
+## Estructura
+
+```
+backend/
+  prisma/          # schema + migraciones
+  src/
+    auth/
+    business/
+    services/
+    clients/
+    availability/
+    appointments/
+    invoices/
+    common/        # guards, decorators, health
+    prisma/        # PrismaService
+  test/            # e2e
+```
+
+
+
+## Notas
+
+- Multi-tenant: casi todas las queries filtran por `businessId` del owner de sesión (o `slug` en rutas públicas).
+- Response types explícitos: piloto en `clients` (`ClientResponse`); el resto se tipará módulo a módulo.
+- Schema: `backend/prisma/schema.prisma` es la fuente de verdad del dominio.
+
