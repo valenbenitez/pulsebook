@@ -4,9 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus, Prisma } from '@prisma/client';
-import { BusinessService } from '../business/business.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { AvailabilityService } from './availability.service';
+import { BusinessService } from '../../business/business.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AvailabilityService } from '../availability.service';
 
 describe('AvailabilityService', () => {
   let service: AvailabilityService;
