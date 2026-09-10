@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { BusinessService } from '../business/business.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type { ClientResponse } from './dto/client.response';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
@@ -19,7 +20,7 @@ export class ClientsService {
     private readonly businessService: BusinessService,
   ) {}
 
-  async create(ownerId: string, dto: CreateClientDto) {
+  async create(ownerId: string, dto: CreateClientDto): Promise<ClientResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     return this.prisma.client.create({
       data: {
@@ -32,7 +33,10 @@ export class ClientsService {
     });
   }
 
-  async findAll(ownerId: string, search?: string) {
+  async findAll(
+    ownerId: string,
+    search?: string,
+  ): Promise<ClientResponse[]> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const where: Prisma.ClientWhereInput = {
       businessId: business.id,
@@ -53,7 +57,7 @@ export class ClientsService {
     });
   }
 
-  async findOne(ownerId: string, id: string) {
+  async findOne(ownerId: string, id: string): Promise<ClientResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const client = await this.prisma.client.findFirst({
       where: { id, businessId: business.id },
@@ -64,7 +68,11 @@ export class ClientsService {
     return client;
   }
 
-  async update(ownerId: string, id: string, dto: UpdateClientDto) {
+  async update(
+    ownerId: string,
+    id: string,
+    dto: UpdateClientDto,
+  ): Promise<ClientResponse> {
     await this.findOne(ownerId, id);
     return this.prisma.client.update({
       where: { id },
@@ -81,7 +89,10 @@ export class ClientsService {
    * Match by email or phone within the business; create if no match.
    * Used by appointments for implicit client upsert on public booking.
    */
-  async findOrCreate(businessId: string, input: FindOrCreateClientInput) {
+  async findOrCreate(
+    businessId: string,
+    input: FindOrCreateClientInput,
+  ): Promise<ClientResponse> {
     const email = input.email?.trim() || null;
     const phone = input.phone?.trim() || null;
 
