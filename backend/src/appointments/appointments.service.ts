@@ -10,6 +10,10 @@ import { zonedDateTimeToUtc } from '../availability/time.util';
 import { BusinessService } from '../business/business.service';
 import { ClientsService } from '../clients/clients.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type {
+  AppointmentListResponse,
+  AppointmentResponse,
+} from './dto/appointment.response';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { CreatePublicAppointmentDto } from './dto/create-public-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments.query.dto';
@@ -30,7 +34,10 @@ export class AppointmentsService {
     private readonly availabilityService: AvailabilityService,
   ) {}
 
-  async create(ownerId: string, dto: CreateAppointmentDto) {
+  async create(
+    ownerId: string,
+    dto: CreateAppointmentDto,
+  ): Promise<AppointmentResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const client = await this.prisma.client.findFirst({
       where: { id: dto.clientId, businessId: business.id },
@@ -79,7 +86,10 @@ export class AppointmentsService {
     });
   }
 
-  async findAll(ownerId: string, query: ListAppointmentsQueryDto) {
+  async findAll(
+    ownerId: string,
+    query: ListAppointmentsQueryDto,
+  ): Promise<AppointmentListResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const where: Prisma.AppointmentWhereInput = {
       businessId: business.id,
@@ -102,7 +112,7 @@ export class AppointmentsService {
     });
   }
 
-  async findOne(ownerId: string, id: string) {
+  async findOne(ownerId: string, id: string): Promise<AppointmentResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const appointment = await this.prisma.appointment.findFirst({
       where: { id, businessId: business.id },
@@ -113,7 +123,11 @@ export class AppointmentsService {
     return appointment;
   }
 
-  async update(ownerId: string, id: string, dto: UpdateAppointmentDto) {
+  async update(
+    ownerId: string,
+    id: string,
+    dto: UpdateAppointmentDto,
+  ): Promise<AppointmentResponse> {
     const existing = await this.findOne(ownerId, id);
     const business = await this.businessService.getByOwnerId(ownerId);
 
@@ -164,7 +178,10 @@ export class AppointmentsService {
     });
   }
 
-  async createPublic(slug: string, dto: CreatePublicAppointmentDto) {
+  async createPublic(
+    slug: string,
+    dto: CreatePublicAppointmentDto,
+  ): Promise<AppointmentResponse> {
     const business = await this.prisma.business.findUnique({
       where: { slug },
     });

@@ -12,6 +12,10 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../common/guards/session-auth.guard';
 import type { AuthUser } from '../common/types/auth-user';
 import { AppointmentsService } from './appointments.service';
+import type {
+  AppointmentListResponse,
+  AppointmentResponse,
+} from './dto/appointment.response';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { CreatePublicAppointmentDto } from './dto/create-public-appointment.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments.query.dto';
@@ -25,13 +29,16 @@ export class AppointmentsController {
   createPublic(
     @Param('slug') slug: string,
     @Body() dto: CreatePublicAppointmentDto,
-  ) {
+  ): Promise<AppointmentResponse> {
     return this.appointmentsService.createPublic(slug, dto);
   }
 
   @Post()
   @UseGuards(SessionAuthGuard)
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateAppointmentDto) {
+  create(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreateAppointmentDto,
+  ): Promise<AppointmentResponse> {
     return this.appointmentsService.create(user.id, dto);
   }
 
@@ -40,13 +47,16 @@ export class AppointmentsController {
   findAll(
     @CurrentUser() user: AuthUser,
     @Query() query: ListAppointmentsQueryDto,
-  ) {
+  ): Promise<AppointmentListResponse> {
     return this.appointmentsService.findAll(user.id, query);
   }
 
   @Get(':id')
   @UseGuards(SessionAuthGuard)
-  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  findOne(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ): Promise<AppointmentResponse> {
     return this.appointmentsService.findOne(user.id, id);
   }
 
@@ -56,7 +66,7 @@ export class AppointmentsController {
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
     @Body() dto: UpdateAppointmentDto,
-  ) {
+  ): Promise<AppointmentResponse> {
     return this.appointmentsService.update(user.id, id, dto);
   }
 }
