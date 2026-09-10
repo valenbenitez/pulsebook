@@ -73,6 +73,8 @@ describe('AuthService', () => {
         email: 'pro@example.com',
         name: 'Pro',
       });
+      expect(result.user).not.toHaveProperty('passwordHash');
+      expect(result).not.toHaveProperty('passwordHash');
       expect(result.business.bufferMin).toBe(15);
       expect(result.business.slug).toBe('pro-shop');
     });
@@ -102,16 +104,17 @@ describe('AuthService', () => {
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      await expect(
-        service.validateCredentials({
-          email: 'pro@example.com',
-          password: 'password123',
-        }),
-      ).resolves.toEqual({
+      const result = await service.validateCredentials({
+        email: 'pro@example.com',
+        password: 'password123',
+      });
+
+      expect(result).toEqual({
         id: 'user-1',
         email: 'pro@example.com',
         name: 'Pro',
       });
+      expect(result).not.toHaveProperty('passwordHash');
     });
 
     it('rejects incorrect password', async () => {

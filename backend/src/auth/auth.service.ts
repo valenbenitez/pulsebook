@@ -6,6 +6,10 @@ import {
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  RegisterResponse,
+  ValidateCredentialsResponse,
+} from './dto/auth.response';
 import { RegisterDto } from './dto/register.dto';
 import { ValidateCredentialsDto } from './dto/validate-credentials.dto';
 
@@ -15,7 +19,7 @@ const BCRYPT_ROUNDS = 10;
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<RegisterResponse> {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
     try {
@@ -60,7 +64,9 @@ export class AuthService {
     }
   }
 
-  async validateCredentials(dto: ValidateCredentialsDto) {
+  async validateCredentials(
+    dto: ValidateCredentialsDto,
+  ): Promise<ValidateCredentialsResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
