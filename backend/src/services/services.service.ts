@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
+import {
+  toServiceResponse,
+  type ServiceResponse,
+} from './dto/service.response';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
@@ -19,9 +23,9 @@ export class ServicesService {
     return business.id;
   }
 
-  async create(ownerId: string, dto: CreateServiceDto) {
+  async create(ownerId: string, dto: CreateServiceDto): Promise<ServiceResponse> {
     const businessId = await this.getBusinessIdForOwner(ownerId);
-    return this.prisma.service.create({
+    const created = await this.prisma.service.create({
       data: {
         businessId,
         name: dto.name,
@@ -31,20 +35,22 @@ export class ServicesService {
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
+    return toServiceResponse(created);
   }
 
-  async list(ownerId: string, isActive?: boolean) {
+  async list(ownerId: string, isActive?: boolean): Promise<ServiceResponse[]> {
     const businessId = await this.getBusinessIdForOwner(ownerId);
-    return this.prisma.service.findMany({
+    const services = await this.prisma.service.findMany({
       where: {
         businessId,
         ...(isActive !== undefined && { isActive }),
       },
       orderBy: { createdAt: 'asc' },
     });
+    return services.map(toServiceResponse);
   }
 
-  async getById(ownerId: string, id: string) {
+  async getById(ownerId: string, id: string): Promise<ServiceResponse> {
     const businessId = await this.getBusinessIdForOwner(ownerId);
     const service = await this.prisma.service.findFirst({
       where: { id, businessId },
@@ -52,13 +58,17 @@ export class ServicesService {
     if (!service) {
       throw new NotFoundException('Service not found');
     }
-    return service;
+    return toServiceResponse(service);
   }
 
-  async update(ownerId: string, id: string, dto: UpdateServiceDto) {
+  async update(
+    ownerId: string,
+    id: string,
+    dto: UpdateServiceDto,
+  ): Promise<ServiceResponse> {
     await this.getById(ownerId, id);
 
-    return this.prisma.service.update({
+    const updated = await this.prisma.service.update({
       where: { id },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -70,5 +80,6 @@ export class ServicesService {
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
+    return toServiceResponse(updated);
   }
 }

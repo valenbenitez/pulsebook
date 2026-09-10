@@ -104,6 +104,7 @@ describe('Services (e2e)', () => {
 
     expect(res.body.name).toBe('Haircut');
     expect(res.body.durationMin).toBe(45);
+    expect(typeof res.body.price).toBe('string');
     expect(Number(res.body.price)).toBe(30.5);
     expect(res.body.isActive).toBe(true);
     expect(res.body).not.toHaveProperty('currency');
@@ -193,6 +194,7 @@ describe('Services (e2e)', () => {
       .expect(200);
 
     expect(patched.body.name).toBe('Haircut Pro');
+    expect(typeof patched.body.price).toBe('string');
     expect(Number(patched.body.price)).toBe(40);
     expect(patched.body.isActive).toBe(false);
 

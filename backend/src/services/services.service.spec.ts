@@ -24,6 +24,12 @@ describe('ServicesService', () => {
     durationMin: 30,
     price: new Prisma.Decimal(25),
     isActive: true,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+  };
+  const ownedServiceResponse = {
+    ...ownedService,
+    price: '25',
   };
 
   beforeEach(() => {
@@ -40,7 +46,7 @@ describe('ServicesService', () => {
   });
 
   describe('create', () => {
-    it('creates service linked to owner business', async () => {
+    it('creates service linked to owner business and maps price to string', async () => {
       prisma.business.findUnique.mockResolvedValue(business);
       prisma.service.create.mockResolvedValue(ownedService);
 
@@ -50,7 +56,7 @@ describe('ServicesService', () => {
           durationMin: 30,
           price: 25,
         }),
-      ).resolves.toEqual(ownedService);
+      ).resolves.toEqual(ownedServiceResponse);
 
       expect(prisma.business.findUnique).toHaveBeenCalledWith({
         where: { ownerId: 'user-1' },
@@ -81,11 +87,13 @@ describe('ServicesService', () => {
   });
 
   describe('list', () => {
-    it('lists only services for owner business', async () => {
+    it('lists only services for owner business with string prices', async () => {
       prisma.business.findUnique.mockResolvedValue(business);
       prisma.service.findMany.mockResolvedValue([ownedService]);
 
-      await expect(service.list('user-1')).resolves.toEqual([ownedService]);
+      await expect(service.list('user-1')).resolves.toEqual([
+        ownedServiceResponse,
+      ]);
       expect(prisma.service.findMany).toHaveBeenCalledWith({
         where: { businessId: 'biz-1' },
         orderBy: { createdAt: 'asc' },
@@ -105,12 +113,12 @@ describe('ServicesService', () => {
   });
 
   describe('getById', () => {
-    it('returns service when owned', async () => {
+    it('returns service when owned with price as string', async () => {
       prisma.business.findUnique.mockResolvedValue(business);
       prisma.service.findFirst.mockResolvedValue(ownedService);
 
       await expect(service.getById('user-1', 'svc-1')).resolves.toEqual(
-        ownedService,
+        ownedServiceResponse,
       );
       expect(prisma.service.findFirst).toHaveBeenCalledWith({
         where: { id: 'svc-1', businessId: 'biz-1' },
@@ -128,7 +136,7 @@ describe('ServicesService', () => {
   });
 
   describe('update', () => {
-    it('updates partial fields without changing businessId', async () => {
+    it('updates partial fields without changing businessId and maps price', async () => {
       prisma.business.findUnique.mockResolvedValue(business);
       prisma.service.findFirst.mockResolvedValue(ownedService);
       const updated = {
@@ -145,7 +153,10 @@ describe('ServicesService', () => {
           price: 30,
           isActive: false,
         }),
-      ).resolves.toEqual(updated);
+      ).resolves.toEqual({
+        ...updated,
+        price: '30',
+      });
 
       expect(prisma.service.update).toHaveBeenCalledWith({
         where: { id: 'svc-1' },
