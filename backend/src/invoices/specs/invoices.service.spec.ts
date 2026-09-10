@@ -6,6 +6,7 @@ import {
 import { InvoiceStatus, PaymentMethod, Prisma } from '@prisma/client';
 import { BusinessService } from '../../business/business.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { toInvoiceResponse } from '../dto/invoice.response';
 import { InvoicesService } from '../invoices.service';
 
 describe('InvoicesService', () => {
@@ -44,6 +45,8 @@ describe('InvoicesService', () => {
     total: new Prisma.Decimal(25.5),
     paidAt: null as Date | null,
     paymentMethod: null as PaymentMethod | null,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     items: [
       {
         id: 'item-1',
@@ -54,6 +57,8 @@ describe('InvoicesService', () => {
       },
     ],
   };
+
+  const draftInvoiceResponse = toInvoiceResponse(draftInvoice);
 
   beforeEach(() => {
     prisma = {
@@ -93,7 +98,7 @@ describe('InvoicesService', () => {
             { description: 'Product', quantity: 1, unitPrice: 5.5 },
           ],
         }),
-      ).resolves.toEqual(draftInvoice);
+      ).resolves.toEqual(draftInvoiceResponse);
 
       expect(prisma.invoice.create).toHaveBeenCalledWith({
         data: {
@@ -151,7 +156,7 @@ describe('InvoicesService', () => {
       prisma.invoice.findMany.mockResolvedValue([draftInvoice]);
       await expect(
         service.findAll('user-1', { status: InvoiceStatus.DRAFT }),
-      ).resolves.toEqual([draftInvoice]);
+      ).resolves.toEqual([draftInvoiceResponse]);
       expect(prisma.invoice.findMany).toHaveBeenCalledWith({
         where: { businessId: 'biz-1', status: InvoiceStatus.DRAFT },
         include: { items: true },
@@ -197,7 +202,7 @@ describe('InvoicesService', () => {
         service.update('user-1', 'inv-1', {
           items: [{ description: 'New', quantity: 2, unitPrice: 20 }],
         }),
-      ).resolves.toEqual(updated);
+      ).resolves.toEqual(toInvoiceResponse(updated));
 
       expect(prisma.invoiceItem.deleteMany).toHaveBeenCalledWith({
         where: { invoiceId: 'inv-1' },
@@ -246,7 +251,9 @@ describe('InvoicesService', () => {
       mockIssueTransaction();
       prisma.invoice.update.mockResolvedValue(issued);
 
-      await expect(service.issue('user-1', 'inv-1')).resolves.toEqual(issued);
+      await expect(service.issue('user-1', 'inv-1')).resolves.toEqual(
+        toInvoiceResponse(issued),
+      );
       expect(prisma.invoice.update).toHaveBeenCalledWith({
         where: { id: 'inv-1' },
         data: { status: InvoiceStatus.ISSUED, number: 4 },
@@ -303,7 +310,7 @@ describe('InvoicesService', () => {
 
       await expect(
         service.pay('user-1', 'inv-1', PaymentMethod.CASH),
-      ).resolves.toEqual(paid);
+      ).resolves.toEqual(toInvoiceResponse(paid));
 
       expect(prisma.invoice.update).toHaveBeenCalledWith({
         where: { id: 'inv-1' },
@@ -334,7 +341,7 @@ describe('InvoicesService', () => {
       prisma.invoice.update.mockResolvedValue(cancelled);
 
       await expect(service.cancel('user-1', 'inv-1')).resolves.toEqual(
-        cancelled,
+        toInvoiceResponse(cancelled),
       );
       expect(prisma.invoice.update).toHaveBeenCalledWith({
         where: { id: 'inv-1' },

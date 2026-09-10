@@ -13,6 +13,11 @@ import { BusinessService } from '../business/business.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceItemDto } from './dto/invoice-item.dto';
+import {
+  toInvoiceResponse,
+  type InvoiceListResponse,
+  type InvoiceResponse,
+} from './dto/invoice.response';
 import { ListInvoicesQueryDto } from './dto/list-invoices.query.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { computeInvoiceTotal } from './invoice-total.util';
@@ -28,7 +33,10 @@ export class InvoicesService {
     private readonly businessService: BusinessService,
   ) {}
 
-  async create(ownerId: string, dto: CreateInvoiceDto) {
+  async create(
+    ownerId: string,
+    dto: CreateInvoiceDto,
+  ): Promise<InvoiceResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
 
     if (dto.clientId) {
@@ -41,7 +49,7 @@ export class InvoicesService {
     const total = computeInvoiceTotal(dto.items);
 
     try {
-      return await this.prisma.invoice.create({
+      const created = await this.prisma.invoice.create({
         data: {
           businessId: business.id,
           clientId: dto.clientId,
@@ -54,15 +62,19 @@ export class InvoicesService {
         },
         include: invoiceInclude,
       });
+      return toInvoiceResponse(created);
     } catch (error) {
       this.rethrowUniqueAppointmentConflict(error);
       throw error;
     }
   }
 
-  async findAll(ownerId: string, query: ListInvoicesQueryDto) {
+  async findAll(
+    ownerId: string,
+    query: ListInvoicesQueryDto,
+  ): Promise<InvoiceListResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
-    return this.prisma.invoice.findMany({
+    const invoices = await this.prisma.invoice.findMany({
       where: {
         businessId: business.id,
         ...(query.status && { status: query.status }),
@@ -70,22 +82,19 @@ export class InvoicesService {
       include: invoiceInclude,
       orderBy: { createdAt: 'desc' },
     });
+    return invoices.map(toInvoiceResponse);
   }
 
-  async findOne(ownerId: string, id: string) {
-    const business = await this.businessService.getByOwnerId(ownerId);
-    const invoice = await this.prisma.invoice.findFirst({
-      where: { id, businessId: business.id },
-      include: invoiceInclude,
-    });
-    if (!invoice) {
-      throw new NotFoundException('Invoice not found');
-    }
-    return invoice;
+  async findOne(ownerId: string, id: string): Promise<InvoiceResponse> {
+    return this.findOneRecord(ownerId, id).then(toInvoiceResponse);
   }
 
-  async update(ownerId: string, id: string, dto: UpdateInvoiceDto) {
-    const existing = await this.findOne(ownerId, id);
+  async update(
+    ownerId: string,
+    id: string,
+    dto: UpdateInvoiceDto,
+  ): Promise<InvoiceResponse> {
+    const existing = await this.findOneRecord(ownerId, id);
     if (existing.status !== InvoiceStatus.DRAFT) {
       throw new BadRequestException('Only DRAFT invoices can be updated');
     }
@@ -100,7 +109,7 @@ export class InvoicesService {
     const total =
       items !== undefined ? computeInvoiceTotal(items) : undefined;
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       if (items !== undefined) {
         await tx.invoiceItem.deleteMany({ where: { invoiceId: id } });
         await tx.invoiceItem.createMany({
@@ -122,17 +131,18 @@ export class InvoicesService {
         include: invoiceInclude,
       });
     });
+    return toInvoiceResponse(updated);
   }
 
-  async issue(ownerId: string, id: string) {
-    const existing = await this.findOne(ownerId, id);
+  async issue(ownerId: string, id: string): Promise<InvoiceResponse> {
+    const existing = await this.findOneRecord(ownerId, id);
     if (existing.status !== InvoiceStatus.DRAFT) {
       throw new BadRequestException('Only DRAFT invoices can be issued');
     }
 
     const business = await this.businessService.getByOwnerId(ownerId);
 
-    return this.prisma.$transaction(async (tx) => {
+    const issued = await this.prisma.$transaction(async (tx) => {
       const last = await tx.invoice.findFirst({
         where: {
           businessId: business.id,
@@ -162,15 +172,20 @@ export class InvoicesService {
         throw error;
       }
     });
+    return toInvoiceResponse(issued);
   }
 
-  async pay(ownerId: string, id: string, paymentMethod: PaymentMethod) {
-    const existing = await this.findOne(ownerId, id);
+  async pay(
+    ownerId: string,
+    id: string,
+    paymentMethod: PaymentMethod,
+  ): Promise<InvoiceResponse> {
+    const existing = await this.findOneRecord(ownerId, id);
     if (existing.status !== InvoiceStatus.ISSUED) {
       throw new BadRequestException('Only ISSUED invoices can be paid');
     }
 
-    return this.prisma.invoice.update({
+    const paid = await this.prisma.invoice.update({
       where: { id },
       data: {
         status: InvoiceStatus.PAID,
@@ -179,10 +194,11 @@ export class InvoicesService {
       },
       include: invoiceInclude,
     });
+    return toInvoiceResponse(paid);
   }
 
-  async cancel(ownerId: string, id: string) {
-    const existing = await this.findOne(ownerId, id);
+  async cancel(ownerId: string, id: string): Promise<InvoiceResponse> {
+    const existing = await this.findOneRecord(ownerId, id);
     if (
       existing.status !== InvoiceStatus.DRAFT &&
       existing.status !== InvoiceStatus.ISSUED
@@ -192,11 +208,24 @@ export class InvoicesService {
       );
     }
 
-    return this.prisma.invoice.update({
+    const cancelled = await this.prisma.invoice.update({
       where: { id },
       data: { status: InvoiceStatus.CANCELLED },
       include: invoiceInclude,
     });
+    return toInvoiceResponse(cancelled);
+  }
+
+  private async findOneRecord(ownerId: string, id: string) {
+    const business = await this.businessService.getByOwnerId(ownerId);
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id, businessId: business.id },
+      include: invoiceInclude,
+    });
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found');
+    }
+    return invoice;
   }
 
   private toItemCreate(item: InvoiceItemDto) {
