@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+  PulseBook design tokens — source of truth: /DESIGN.md
+  Tailwind v4 maps @theme vars to utilities (bg-ink, text-ink-muted, rounded-xl, …).
+*/
+
+@theme {
+  --color-ink: #0a0a0a;
+  --color-ink-muted: #71717a;
+  --color-ink-subtle: #a1a1aa;
+  --color-canvas: #f4f4f5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f4f5;
+  --color-surface-emphasis: #e4e4e7;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+  --color-inverse: #ffffff;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-soft: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+@layer base {
+  html {
+    height: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-ink);
+    color: var(--color-inverse);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
