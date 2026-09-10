@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../common/guards/session-auth.guard';
-import { AuthUser } from '../common/types/auth-user';
+import type { AuthUser } from '../common/types/auth-user';
 import { BusinessService } from './business.service';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 

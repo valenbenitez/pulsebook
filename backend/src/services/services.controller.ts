@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../common/guards/session-auth.guard';
-import { AuthUser } from '../common/types/auth-user';
+import type { AuthUser } from '../common/types/auth-user';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { ListServicesQueryDto } from './dto/list-services.query.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';

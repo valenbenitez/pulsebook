@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SessionAuthGuard } from '../common/guards/session-auth.guard';
-import { AuthUser } from '../common/types/auth-user';
+import type { AuthUser } from '../common/types/auth-user';
 import { AvailabilityService } from './availability.service';
 import { CreateAvailabilityExceptionDto } from './dto/create-availability-exception.dto';
 import { CreateWorkingHoursDto } from './dto/create-working-hours.dto';
@@ -22,8 +22,6 @@ import { UpdateWorkingHoursDto } from './dto/update-working-hours.dto';
 @Controller('availability')
 export class AvailabilityController {
   constructor(private readonly availabilityService: AvailabilityService) {}
-
-  // ─── Public (no auth) ──────────────────────────────────────────────────────
 
   @Get('public/:slug/slots')
   getPublicSlots(
@@ -36,8 +34,6 @@ export class AvailabilityController {
       query.date,
     );
   }
-
-  // ─── Working hours (auth) ──────────────────────────────────────────────────
 
   @Post('hours')
   @UseGuards(SessionAuthGuard)
