@@ -7,6 +7,11 @@ import {
 import { AppointmentStatus, Prisma } from '@prisma/client';
 import { BusinessService } from '../business/business.service';
 import { PrismaService } from '../prisma/prisma.service';
+import type {
+  AvailabilityExceptionResponse,
+  PublicSlotsResponse,
+  WorkingHoursResponse,
+} from './dto/availability.response';
 import { CreateAvailabilityExceptionDto } from './dto/create-availability-exception.dto';
 import { CreateWorkingHoursDto } from './dto/create-working-hours.dto';
 import { UpdateAvailabilityExceptionDto } from './dto/update-availability-exception.dto';
@@ -35,7 +40,10 @@ export class AvailabilityService {
 
   // ─── Working hours ─────────────────────────────────────────────────────────
 
-  async createWorkingHours(ownerId: string, dto: CreateWorkingHoursDto) {
+  async createWorkingHours(
+    ownerId: string,
+    dto: CreateWorkingHoursDto,
+  ): Promise<WorkingHoursResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     return this.prisma.workingHours.create({
       data: {
@@ -47,7 +55,7 @@ export class AvailabilityService {
     });
   }
 
-  async listWorkingHours(ownerId: string) {
+  async listWorkingHours(ownerId: string): Promise<WorkingHoursResponse[]> {
     const business = await this.businessService.getByOwnerId(ownerId);
     return this.prisma.workingHours.findMany({
       where: { businessId: business.id },
@@ -55,7 +63,10 @@ export class AvailabilityService {
     });
   }
 
-  async getWorkingHoursById(ownerId: string, id: string) {
+  async getWorkingHoursById(
+    ownerId: string,
+    id: string,
+  ): Promise<WorkingHoursResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const row = await this.prisma.workingHours.findFirst({
       where: { id, businessId: business.id },
@@ -70,7 +81,7 @@ export class AvailabilityService {
     ownerId: string,
     id: string,
     dto: UpdateWorkingHoursDto,
-  ) {
+  ): Promise<WorkingHoursResponse> {
     const existing = await this.getWorkingHoursById(ownerId, id);
     const startTime = dto.startTime ?? existing.startTime;
     const endTime = dto.endTime ?? existing.endTime;
@@ -91,7 +102,10 @@ export class AvailabilityService {
     });
   }
 
-  async deleteWorkingHours(ownerId: string, id: string) {
+  async deleteWorkingHours(
+    ownerId: string,
+    id: string,
+  ): Promise<{ ok: true }> {
     await this.getWorkingHoursById(ownerId, id);
     await this.prisma.workingHours.delete({ where: { id } });
     return { ok: true };
@@ -99,7 +113,10 @@ export class AvailabilityService {
 
   // ─── Exceptions ────────────────────────────────────────────────────────────
 
-  async createException(ownerId: string, dto: CreateAvailabilityExceptionDto) {
+  async createException(
+    ownerId: string,
+    dto: CreateAvailabilityExceptionDto,
+  ): Promise<AvailabilityExceptionResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     this.assertExceptionWindow(dto.isClosed, dto.startTime, dto.endTime);
 
@@ -119,7 +136,9 @@ export class AvailabilityService {
     }
   }
 
-  async listExceptions(ownerId: string) {
+  async listExceptions(
+    ownerId: string,
+  ): Promise<AvailabilityExceptionResponse[]> {
     const business = await this.businessService.getByOwnerId(ownerId);
     return this.prisma.availabilityException.findMany({
       where: { businessId: business.id },
@@ -127,7 +146,10 @@ export class AvailabilityService {
     });
   }
 
-  async getExceptionById(ownerId: string, id: string) {
+  async getExceptionById(
+    ownerId: string,
+    id: string,
+  ): Promise<AvailabilityExceptionResponse> {
     const business = await this.businessService.getByOwnerId(ownerId);
     const row = await this.prisma.availabilityException.findFirst({
       where: { id, businessId: business.id },
@@ -142,7 +164,7 @@ export class AvailabilityService {
     ownerId: string,
     id: string,
     dto: UpdateAvailabilityExceptionDto,
-  ) {
+  ): Promise<AvailabilityExceptionResponse> {
     const existing = await this.getExceptionById(ownerId, id);
     const isClosed = dto.isClosed ?? existing.isClosed;
     const startTime =
@@ -188,7 +210,10 @@ export class AvailabilityService {
     }
   }
 
-  async deleteException(ownerId: string, id: string) {
+  async deleteException(
+    ownerId: string,
+    id: string,
+  ): Promise<{ ok: true }> {
     await this.getExceptionById(ownerId, id);
     await this.prisma.availabilityException.delete({ where: { id } });
     return { ok: true };
@@ -196,7 +221,11 @@ export class AvailabilityService {
 
   // ─── Public slots ──────────────────────────────────────────────────────────
 
-  async getPublicSlots(slug: string, serviceId: string, dateYmd: string) {
+  async getPublicSlots(
+    slug: string,
+    serviceId: string,
+    dateYmd: string,
+  ): Promise<PublicSlotsResponse> {
     const business = await this.prisma.business.findUnique({
       where: { slug },
     });
