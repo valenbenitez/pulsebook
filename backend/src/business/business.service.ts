@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import type { BusinessResponse } from './dto/business.response';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 
 @Injectable()
 export class BusinessService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getByOwnerId(ownerId: string) {
+  async getByOwnerId(ownerId: string): Promise<BusinessResponse> {
     const business = await this.prisma.business.findUnique({
       where: { ownerId },
     });
@@ -21,7 +22,10 @@ export class BusinessService {
     return business;
   }
 
-  async updateByOwnerId(ownerId: string, dto: UpdateBusinessDto) {
+  async updateByOwnerId(
+    ownerId: string,
+    dto: UpdateBusinessDto,
+  ): Promise<BusinessResponse> {
     await this.getByOwnerId(ownerId);
 
     try {
